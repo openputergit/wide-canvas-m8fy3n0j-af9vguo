@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CustomerAI Pro - Retention Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .chart-container {
+            min-height: 300px;
+            position: relative;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        #three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .nav-item.active {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #2563eb;
+            border-left: 3px solid #2563eb;
+        }
+        .reward-badge {
+            position: relative;
+            overflow: hidden;
+        }
+        .reward-badge::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(59, 130, 246, 0.2);
+            transform: rotate(45deg);
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-container"></div>
+    
+    <div class="min-h-screen flex">
+        <!-- Sidebar Navigation -->
+        <aside class="hidden md:flex flex-col w-64 glass-effect shadow-lg">
+            <div class="p-5 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-blue-600">CustomerAI Pro</h1>
+                <p class="text-sm text-gray-600 mt-1">Retention Analytics</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="#" class="nav-item active flex items-center px-5 py-3 text-gray-700">
+                            <i class="bi bi-speedometer2 mr-3"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700">
+                            <i class="bi bi-person mr-3"></i>
+                            <span>My Profile</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700">
+                            <i class="bi bi-receipt mr-3"></i>
+                            <span>Bills</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700">
+                            <i class="bi bi-trophy mr-3"></i>
+                            <span>Rewards</span>
+                            <span class="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-600 bg-blue-100 rounded-full">3</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item flex items-center px-5 py-3 text-gray-700">
+                            <i class="bi bi-gear mr-3"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="p-5 border-t border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Profile" class="w-8 h-8 rounded-full">
+                    <div>
+                        <p class="text-sm font-medium">Alex Martinez</p>
+                        <p class="text-xs text-gray-500">Premium Plan</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
+            <div class="grid grid-cols-5 h-16">
+                <a href="#" class="flex flex-col items-center justify-center text-blue-600">
+                    <i class="bi bi-speedometer2 text-xl"></i>
+                    <span class="text-xs mt-1">Dashboard</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600">
+                    <i class="bi bi-person text-xl"></i>
+                    <span class="text-xs mt-1">Profile</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600">
+                    <i class="bi bi-receipt text-xl"></i>
+                    <span class="text-xs mt-1">Bills</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600 relative">
+                    <i class="bi bi-trophy text-xl"></i>
+                    <span class="text-xs mt-1">Rewards</span>
+                    <span class="absolute top-0 right-4 w-4 h-4 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center">3</span>
+                </a>
+                <a href="#" class="flex flex-col items-center justify-center text-gray-600">
+                    <i class="bi bi-gear text-xl"></i>
+                    <span class="text-xs mt-1">Settings</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto pb-16 md:pb-0">
+            <!-- Top Navigation -->
+            <nav class="bg-white glass-effect shadow-sm md:hidden">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex justify-between h-16">
+                        <div class="flex items-center">
+                            <h1 class="text-xl font-bold text-blue-600">CustomerAI Pro</h1>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button id="refreshBtn" class="text-gray-600 hover:text-blue-600">
+                                <i class="bi bi-arrow-clockwise text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Header Section -->
+                <div class="md:flex md:items-center md:justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Customer Retention Dashboard</h1>
+                        <p class="text-gray-600">Analyze customer behavior and optimize retention</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <button id="refreshBtn" class="hidden md:inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <i class="bi bi-arrow-clockwise mr-2"></i>
+                            Refresh Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Customer Health Overview -->
+                <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Customer Health Overview</h2>
+                        <div class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
+                            <i class="bi bi-arrow-up"></i> 12% from last month
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Health Score -->
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                    <i class="bi bi-heart-pulse"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Health Score</p>
+                                    <h3 class="text-xl font-bold">87%</h3>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 87%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Churn Risk -->
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600 mr-3">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Churn Risk</p>
+                                    <h3 class="text-xl font-bold">13%</h3>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-red-600 h-2 rounded-full" style="width: 13%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Users -->
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Active Users</p>
+                                    <h3 class="text-xl font-bold">4,628</h3>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- On-time Payments -->
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                    <i class="bi bi-credit-card"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">On-time Payments</p>
+                                    <h3 class="text-xl font-bold">78%</h3>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                    <h2 class="text-lg font-semibold mb-4">Customer Data Analysis</h2>
+                    <div class="space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:space-x-4">
+                            <input type="file" id="csvUpload" accept=".csv" class="hidden">
+                            <label for="csvUpload" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer inline-flex items-center mb-2 md:mb-0">
+                                <i class="bi bi-upload mr-2"></i>
+                                Upload CSV Data
+                            </label>
+                            <span id="fileName" class="text-sm text-gray-600"></span>
+                        </div>
+                        <div id="uploadStatus" class="hidden">
+                            <div class="w-full h-2 bg-gray-200 rounded-full">
+                                <div class="upload-progress w-0 h-2 bg-blue-600 rounded-full transition-all duration-300"></div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p><i class="bi bi-info-circle mr-1"></i> Upload your customer payment history to analyze retention patterns and get personalized insights.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reward Status -->
+                <div class="glass-effect rounded-lg shadow-sm p-6 mb-8">
+                    <h2 class="text-lg font-semibold mb-4">Payment Rewards Program</h2>
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold">Gold Tier Status</h3>
+                                <p class="text-sm text-white/80">Reward points: 2,450</p>
+                                <div class="mt-4">
+                                    <button class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md text-sm">
+                                        Redeem Rewards
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                    <circle class="text-blue-300/30" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50"/>
+                                    <circle class="progress-ring-circle text-white" stroke="currentColor" stroke-width="8" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="283" stroke-dashoffset="70"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <span class="text-2xl font-bold">75%</span>
+                                        <span class="block text-xs">To Platinum</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">On-Time Payment</h4>
+                                    <p class="text-sm text-gray-600">+50 points for each on-time payment</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">3-Month Streak</h4>
+                                    <p class="text-sm text-gray-600">+200 bonus points for 3 consecutive months</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm reward-badge">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 mr-3">
+                                    <i class="bi bi-star"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">Referral Bonus</h4>
+                                    <p class="text-sm text-gray-600">+500 points for each successful referral</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Results -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Retention Rate -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Retention Rate</h3>
+                        <div class="chart-container" id="retentionChart">
+                            <div class="shimmer w-full h-full rounded"></div>
+                        </div>
+                    </div>
+
+                    <!-- Churn Prediction -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Churn Risk Analysis</h3>
+                        <div class="chart-container" id="churnChart">
+                            <div class="shimmer w-full h-full rounded"></div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Segments -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Customer Segments</h3>
+                        <div id="segments" class="space-y-4">
+                            <div class="shimmer h-8 w-full rounded"></div>
+                            <div class="shimmer h-8 w-full rounded"></div>
+                            <div class="shimmer h-8 w-full rounded"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="glass-effect rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">AI Recommendations</h3>
+                        <div id="recommendations" class="space-y-4">
+                            <div class="shimmer h-20 w-full rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Behavior Prediction -->
+                <div class="glass-effect rounded-lg shadow-sm p-6 mt-8">
+                    <h3 class="text-lg font-semibold mb-4">Behavior Prediction & Personalized Offers</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-600 mr-3">
+                                    <i class="bi bi-lightbulb"></i>
+                                </div>
+                                <h4 class="font-medium">Predicted Next Action</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">
+                                Customer is likely to <span class="font-medium text-blue-600">renew subscription</span> in the next 30 days with 78% probability.
+                            </p>
+                            <div class="mt-3">
+                                <a href="#" class="text-blue-600 text-sm hover:underline">View prediction basis</a>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 mr-3">
+                                    <i class="bi bi-gift"></i>
+                                </div>
+                                <h4 class="font-medium">Personalized Offer</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">
+                                Offer a 15% discount on the annual plan to increase retention probability by 25%.
+                            </p>
+                            <div class="mt-3">
+                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Apply Offer</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 mr-3">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <h4 class="font-medium">Engagement Suggestion</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">
+                                Send a personalized email highlighting unused premium features to increase engagement.
+                            </p>
+                            <div class="mt-3">
+                                <a href="#" class="text-blue-600 text-sm hover:underline">Schedule email</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Three.js background
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Three.js scene
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f9fa, 1);
+            document.getElementById('three-container').appendChild(renderer.domElement);
+
+            // Create particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const count = 500;
+            
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+            
+            for (let i = 0; i < count * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 20;
+                positions[i + 1] = (Math.random() - 0.5) * 20;
+                positions[i + 2] = (Math.random() - 0.5) * 20;
+                
+                // Blue/purple gradient colors
+                colors[i] = Math.random() * 0.2 + 0.1;     // R
+                colors[i + 1] = Math.random() * 0.2 + 0.3; // G
+                colors[i + 2] = Math.random() * 0.2 + 0.7; // B
+            }
+            
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.05,
+                sizeAttenuation: true,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.5,
+            });
+            
+            const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particles);
+            
+            camera.position.z = 5;
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                particles.rotation.x += 0.0005;
+                particles.rotation.y += 0.0005;
+                
+                renderer.render(scene, camera);
+            }
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            animate();
+
+            // File upload handling
+            const csvUpload = document.getElementById('csvUpload');
+            const fileName = document.getElementById('fileName');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.querySelector('.upload-progress');
+
+            csvUpload.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                fileName.textContent = file.name;
+                uploadStatus.classList.remove('hidden');
+                uploadProgress.style.width = '0%';
+
+                // Simulate file upload and processing
+                await simulateUpload();
+
+                // Process the data
+                await processCustomerData();
+            });
+
+            async function simulateUpload() {
+                return new Promise(resolve => {
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        uploadProgress.style.width = `${progress}%`;
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            setTimeout(resolve, 500);
+                        }
+                    }, 200);
+                });
+            }
+
+            async function processCustomerData() {
+                // Simulate AI analysis with loading state
+                document.getElementById('retentionChart').innerHTML = '<div class="shimmer w-full h-full rounded"></div>';
+                document.getElementById('churnChart').innerHTML = '<div class="shimmer w-full h-full rounded"></div>';
+                document.getElementById('segments').innerHTML = `
+                    <div class="shimmer h-8 w-full rounded"></div>
+                    <div class="shimmer h-8 w-full rounded"></div>
+                    <div class="shimmer h-8 w-full rounded"></div>
+                `;
+                document.getElementById('recommendations').innerHTML = '<div class="shimmer h-20 w-full rounded"></div>';
+
+                try {
+                    const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/ai', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer WDNNbALCcIXHfAQXLygXc8tjSyi1',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: [
+                                        {
+                                            type: "text",
+                                            text: "Analyze customer retention patterns, payment behaviors, and provide personalized reward recommendations based on user segments."
+                                        }
+                                    ]
+                                }
+                            ]
+                        })
+                    });
+
+                    if (response.ok) {
+                        updateDashboard();
+                    }
+                } catch (error) {
+                    console.error("Error processing data:", error);
+                    // Show error message to user
+                    alert("There was an error processing your data. Please try again.");
+                }
+            }
+
+            function updateDashboard() {
+                // Create retention chart
+                const retentionChart = document.getElementById('retentionChart');
+                retentionChart.innerHTML = '<canvas></canvas>';
+                const retentionCanvas = retentionChart.querySelector('canvas');
+                
+                new Chart(retentionCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Retention Rate (%)',
+                            data: [82, 79, 85, 87, 89, 92],
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 70,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+                
+                // Create churn prediction chart
+                const churnChart = document.getElementById('churnChart');
+                churnChart.innerHTML = '<canvas></canvas>';
+                const churnCanvas = churnChart.querySelector('canvas');
+                
+                new Chart(churnCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                        datasets: [{
+                            data: [77, 15, 8],
+                            backgroundColor: [
+                                'rgba(34, 197, 94, 0.8)',
+                                'rgba(234, 179, 8, 0.8)',
+                                'rgba(239, 68, 68, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(234, 179, 8, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+
+                // Update segments
+                const segments = document.getElementById('segments');
+                segments.innerHTML = `
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-blue-600 mr-2"></div>
+                            <span class="font-medium">High-Value Loyal</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-blue-600 font-medium mr-2">32%</span>
+                            <div class="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">5,217 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                            <span class="font-medium">At Risk</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-yellow-600 font-medium mr-2">15%</span>
+                            <div class="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">2,446 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-red-600 mr-2"></div>
+                            <span class="font-medium">Churning</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-red-600 font-medium mr-2">8%</span>
+                            <div class="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full">1,305 users</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-green-600 mr-2"></div>
+                            <span class="font-medium">Consistent Payers</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-green-600 font-medium mr-2">45%</span>
+                            <div class="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">7,339 users</div>
+                        </div>
+                    </div>
+                `;
+
+                // Update recommendations
+                const recommendations = document.getElementById('recommendations');
+                recommendations.innerHTML = `
+                    <div class="p-4 bg-blue-50 rounded">
+                        <h4 class="font-medium mb-2 flex items-center">
+                            <i class="bi bi-lightning-charge mr-2 text-blue-600"></i>
+                            Priority Actions:
+                        </h4>
+                        <ul class="list-disc list-inside text-sm space-y-2 ml-2">
+                            <li>Implement tiered loyalty program for high-value customers with payment streak bonuses</li>
+                            <li>Send payment reminders 3 days before due dates to at-risk customers</li>
+                            <li>Offer flexible payment options to the churning segment</li>
+                            <li>Reward consistent payers with early access to new features</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded mt-3">
+                        <h4 class="font-medium mb-2 flex items-center">
+                            <i class="bi bi-award mr-2 text-purple-600"></i>
+                            Reward Program Optimization:
+                        </h4>
+                        <p class="text-sm ml-2">
+                            Based on machine learning analysis, increasing rewards for 3-month payment streaks by 15% could reduce churn by approximately 23% in the at-risk segment.
+                        </p>
+                    </div>
+                `;
+            }
+
+            // Refresh button functionality
+            const refreshBtns = document.querySelectorAll('#refreshBtn');
+            refreshBtns.forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (csvUpload.files.length > 0) {
+                        await processCustomerData();
+                    } else {
+                        alert("Please upload customer data first");
+                    }
+                });
+            });
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
